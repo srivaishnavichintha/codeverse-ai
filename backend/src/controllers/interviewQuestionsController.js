@@ -100,7 +100,7 @@ async function saveQuestions(req, res, next) {
     const docs = questions.map((q) => ({
       userId,
       sessionId: q.sessionId || null,
-      question: questionText.trim(),
+      question: (q.question || q.questionText).trim(),
       topic: (q.topic || q.category || 'dsa').trim().toLowerCase(),
       difficulty: q.difficulty.toLowerCase(),
       category: q.category || 'concept',

@@ -248,9 +248,16 @@ async function updateRatingsForPublicContest(rankedDocs) {
     // Top half gain points, bottom half lose points
     const ratingDelta = Math.round((total / 2 - rank) * 5);
 
-    await User.findByIdAndUpdate(p.user, {
-      $inc: { rating: ratingDelta },
-    });
+    const user = await User.findById(p.user);
+if (user) {
+  user.rating = Math.max(0, (user.rating ?? 1200) + ratingDelta);
+  user.ratingHistory.push({
+    label: `C${contestId.toString().slice(-4)}`,
+    score: user.rating,
+    win: ratingDelta > 0,
+  });
+  await user.save();
+}
   }
 }
 

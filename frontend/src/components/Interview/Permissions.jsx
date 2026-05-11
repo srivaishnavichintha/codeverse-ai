@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInterview } from '../../context/InterviewContext'
 import './Permissions.css'
@@ -8,26 +8,36 @@ const rules = [
   'Tab switching will be detected and penalized',
   'Copy, paste, and right-click are disabled',
   'Voice answers are required for follow-up questions',
-  'Camera must remain enabled at all times',
   'Maximum 3 violations before automatic termination',
   'Screen recording will be active during the session',
   'DevTools access is monitored and restricted',
 ]
 
 const checks = [
-  { id: 'camera', label: 'Camera Access', icon: '⬡' },
   { id: 'mic', label: 'Microphone Access', icon: '◈' },
   { id: 'screen', label: 'Screen Recording', icon: '▦' },
 ]
 
 export default function Permissions() {
-  const { beginCoding, isLoading, initError, resetInterview } = useInterview()
-  const [permStatus, setPermStatus] = useState({ camera: 'pending', mic: 'pending', screen: 'pending' })
-  const [checklist, setChecklist] = useState(rules.map(() => false))
-  const [cameraStream, setCameraStream] = useState(null)
-  const videoRef = useRef(null)
+
+  const {
+    beginCoding,
+    isLoading,
+    initError,
+    resetInterview
+  } = useInterview()
+
+  const [permStatus, setPermStatus] = useState({
+    mic: 'pending',
+    screen: 'pending',
+  })
+
+  const [checklist, setChecklist] = useState(
+    rules.map(() => false)
+  )
 
   useEffect(() => {
+
     // Stagger checklist reveal
     rules.forEach((_, i) => {
       setTimeout(() => {
@@ -39,89 +49,133 @@ export default function Permissions() {
       }, 300 + i * 200)
     })
 
-    // Simulate camera request
+    // Request ONLY microphone access
     setTimeout(() => {
-      navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
+      navigator.mediaDevices?.getUserMedia({
+        audio: true
+      })
         .then(stream => {
-          setCameraStream(stream)
-          if (videoRef.current) videoRef.current.srcObject = stream
-          setPermStatus(p => ({ ...p, camera: 'granted', mic: 'granted' }))
+
+          // stop tracks immediately after permission granted
+          stream.getTracks().forEach(track => track.stop())
+
+          setPermStatus(prev => ({
+            ...prev,
+            mic: 'granted'
+          }))
         })
         .catch(() => {
-          setPermStatus(p => ({ ...p, camera: 'denied', mic: 'denied' }))
+          setPermStatus(prev => ({
+            ...prev,
+            mic: 'denied'
+          }))
         })
     }, 800)
 
+    // Simulated screen recording permission
     setTimeout(() => {
-      setPermStatus(p => ({ ...p, screen: 'granted' }))
+      setPermStatus(prev => ({
+        ...prev,
+        screen: 'granted'
+      }))
     }, 1800)
 
-    return () => {
-      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop())
-    }
   }, [])
 
-  const allGranted = Object.values(permStatus).every(v => v !== 'pending')
+  const allGranted = Object.values(permStatus)
+    .every(v => v !== 'pending')
 
   const handleBegin = () => {
-    document.documentElement.requestFullscreen?.().catch(() => {})
+    document.documentElement
+      .requestFullscreen?.()
+      .catch(() => {})
+
     beginCoding()
   }
 
   const statusIcon = (s) => {
-    if (s === 'pending') return <span className="perm-spinner" />
-    if (s === 'granted') return <span className="perm-check">✓</span>
+    if (s === 'pending') {
+      return <span className="perm-spinner" />
+    }
+
+    if (s === 'granted') {
+      return <span className="perm-check">✓</span>
+    }
+
     return <span className="perm-x">✕</span>
   }
 
   return (
     <div className="perms-page">
-      <motion.div className="perms-container" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: [0.4,0,0.2,1] }}>
 
-        {/* Left — Webcam & checks */}
+      <motion.div
+        className="perms-container"
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          duration: 0.5,
+          ease: [0.4, 0, 0.2, 1]
+        }}
+      >
+
+        {/* Left */}
         <div className="perms-left">
-          <div className="cam-preview">
-            {permStatus.camera === 'granted' ? (
-              <video ref={videoRef} autoPlay muted playsInline className="cam-video" />
-            ) : (
-              <div className="cam-placeholder">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                  <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                </svg>
-                <span>Awaiting camera…</span>
-              </div>
-            )}
-            <div className="cam-overlay-badge">
-              <span className="pulse-dot" />
-              LIVE
-            </div>
-          </div>
 
           <div className="perm-checks">
             {checks.map(c => (
-              <div key={c.id} className={`perm-item ${permStatus[c.id]}`}>
+              <div
+                key={c.id}
+                className={`perm-item ${permStatus[c.id]}`}
+              >
                 <span className="perm-icon">{c.icon}</span>
-                <span className="perm-label">{c.label}</span>
-                <div className="perm-status">{statusIcon(permStatus[c.id])}</div>
+
+                <span className="perm-label">
+                  {c.label}
+                </span>
+
+                <div className="perm-status">
+                  {statusIcon(permStatus[c.id])}
+                </div>
               </div>
             ))}
           </div>
 
           <div className="perms-security-note">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
-            <span>All monitoring is session-scoped and deleted after evaluation.</span>
+
+            <span>
+              Audio access is used only for voice-based interview responses.
+            </span>
           </div>
+
         </div>
 
-        {/* Right — Rules */}
+        {/* Right */}
         <div className="perms-right">
-          <div className="section-label">Pre-Interview Check</div>
-          <h2 className="perms-title">Interview Protocol</h2>
-          <p className="perms-subtitle">Review and confirm all rules before proceeding. Violations are monitored by AI in real-time.</p>
+
+          <div className="section-label">
+            Pre-Interview Check
+          </div>
+
+          <h2 className="perms-title">
+            Interview Protocol
+          </h2>
+
+          <p className="perms-subtitle">
+            Review and confirm all rules before proceeding.
+          </p>
 
           <div className="rules-list">
+
             {rules.map((rule, i) => (
               <AnimatePresence key={i}>
                 {checklist[i] && (
@@ -129,7 +183,10 @@ export default function Permissions() {
                     className="rule-item"
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, ease: [0.4,0,0.2,1] }}
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.4, 0, 0.2, 1]
+                    }}
                   >
                     <span className="rule-marker">—</span>
                     <span>{rule}</span>
@@ -137,49 +194,121 @@ export default function Permissions() {
                 )}
               </AnimatePresence>
             ))}
+
           </div>
 
           <motion.button
-            className={`begin-btn ${(allGranted && !isLoading) ? 'ready' : 'waiting'}`}
-            onClick={(allGranted && !isLoading) ? handleBegin : undefined}
-            whileHover={(allGranted && !isLoading) ? { scale: 1.01 } : {}}
-            whileTap={(allGranted && !isLoading) ? { scale: 0.99 } : {}}
+            className={`begin-btn ${(allGranted && !isLoading)
+              ? 'ready'
+              : 'waiting'
+            }`}
+            onClick={
+              (allGranted && !isLoading)
+                ? handleBegin
+                : undefined
+            }
+            whileHover={
+              (allGranted && !isLoading)
+                ? { scale: 1.01 }
+                : {}
+            }
+            whileTap={
+              (allGranted && !isLoading)
+                ? { scale: 0.99 }
+                : {}
+            }
           >
+
             {isLoading ? (
-              <><span className="perm-spinner" style={{ marginRight: 8, display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> Starting Session…</>
-            ) : allGranted ? (
               <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <span
+                  className="perm-spinner"
+                  style={{
+                    marginRight: 8,
+                    display: 'inline-block',
+                    width: 14,
+                    height: 14,
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTopColor: '#fff',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}
+                />
+                Starting Session…
+              </>
+
+            ) : allGranted ? (
+
+              <>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
                 </svg>
+
                 Enable Fullscreen & Begin Interview
               </>
+
             ) : (
               <>Waiting for permissions…</>
             )}
+
           </motion.button>
 
           <AnimatePresence>
             {initError && (
-              <motion.div 
+              <motion.div
                 className="init-error-banner"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
-                style={{ marginTop: '16px', padding: '12px', background: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '6px', color: '#5eead4', fontSize: '0.85rem' }}
+                style={{
+                  marginTop: '16px',
+                  padding: '12px',
+                  background: 'rgba(20, 184, 166, 0.1)',
+                  border: '1px solid rgba(20, 184, 166, 0.3)',
+                  borderRadius: '6px',
+                  color: '#5eead4',
+                  fontSize: '0.85rem'
+                }}
               >
-                <div style={{ marginBottom: '8px', fontWeight: 500 }}>⚠️ {initError}</div>
-                <button 
+                <div
+                  style={{
+                    marginBottom: '8px',
+                    fontWeight: 500
+                  }}
+                >
+                  ⚠️ {initError}
+                </div>
+
+                <button
                   onClick={resetInterview}
-                  style={{ background: 'transparent', border: 'none', color: '#fff', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: '0.8rem' }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: '0.8rem'
+                  }}
                 >
                   Return to Dashboard
                 </button>
+
               </motion.div>
             )}
           </AnimatePresence>
+
         </div>
+
       </motion.div>
+
     </div>
   )
 }

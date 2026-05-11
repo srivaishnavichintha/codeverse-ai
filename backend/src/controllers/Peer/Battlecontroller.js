@@ -235,9 +235,16 @@ exports.evaluateBattleController = async (req, res, next) => {
       const User = require('../../models/User');
       const winner = await User.findById(result.winnerId);
       if (winner) {
-        winner.rating += 10;
-        winner.wins = (winner.wins || 0) + 1;
-        await winner.save();
+       const BATTLE_GAIN = 10;
+winner.rating += BATTLE_GAIN;
+winner.wins = (winner.wins || 0) + 1;
+winner.ratingHistory.push({ label: `B${battle._id.toString().slice(-4)}`, score: winner.rating, win: true });
+await winner.save();
+
+loser.rating = Math.max(0, (loser.rating ?? 1200) - BATTLE_GAIN);
+loser.losses = (loser.losses || 0) + 1;
+loser.ratingHistory.push({ label: `B${battle._id.toString().slice(-4)}`, score: loser.rating, win: false });
+await loser.save();
         await Notification.create({
           user: winner._id,
           type: 'points_transaction',
