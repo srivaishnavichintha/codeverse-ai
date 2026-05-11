@@ -335,3 +335,176 @@ module.exports = {
   terminateSession,
   getDashboardStats,
 };
+/**
+ * GET /api/interview/coding-analytics
+ * Broad coding practice analytics: per-tag performance, submission heatmap,
+ * language distribution, difficulty breakdown, and weekly/monthly trends.
+ */
+async function getCodingPracticeAnalytics(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const Submission = require('../models/Submission');
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const submissions = await Submission.find({
+      user: userId,
+      createdAt: { $gte: sixMonthsAgo },
+    })
+      .populate({ path: 'problem', select: 'tags difficulty title slug' })
+      .select('verdict language runtimeMs memoryKb createdAt sourceType problem')
+      .lean();
+
+    const tagMap = {};
+    const langMap = {};
+    const diffMap = { Easy: { solved: 0, attempted: 0 }, Medium: { solved: 0, attempted: 0 }, Hard: { solved: 0, attempted: 0 } };
+    const weeklyMap = {};
+    const monthlyMap = {};
+
+    let totalAttempted = 0, totalSolved = 0, totalRuntime = 0, runtimeCount = 0;
+    let currentStreak = 0, maxStreak = 0;
+    const solvedDates = new Set();
+
+    submissions.forEach(sub => {
+      const isAC = sub.verdict === 'Accepted';
+      const prob  = sub.problem;
+      const date  = new Date(sub.createdAt);
+      const day   = date.toISOString().split('T')[0];
+      const week  = `${date.getFullYear()}-W${String(getWeekNumber(date)).padStart(2, '0')}`;
+      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      totalAttempted++;
+      if (isAC) { totalSolved++; solvedDates.add(day); }
+
+      if (sub.language) langMap[sub.language] = (langMap[sub.language] || 0) + 1;
+      if (sub.runtimeMs != null && sub.runtimeMs >= 0) { totalRuntime += sub.runtimeMs; runtimeCount++; }
+
+      if (prob && prob.difficulty && diffMap[prob.difficulty]) {
+        diffMap[prob.difficulty].attempted++;
+        if (isAC) diffMap[prob.difficulty].solved++;
+      }
+
+      if (prob && Array.isArray(prob.tags)) {
+        prob.tags.forEach(tag => {
+          if (!tagMap[tag]) tagMap[tag] = { solved: 0, attempted: 0, totalRuntime: 0, runtimeCount: 0 };
+          tagMap[tag].attempted++;
+          if (isAC) tagMap[tag].solved++;
+          if (sub.runtimeMs != null && sub.runtimeMs >= 0) {
+            tagMap[tag].totalRuntime += sub.runtimeMs;
+            tagMap[tag].runtimeCount++;
+          }
+        });
+      }
+
+      if (!weeklyMap[week]) weeklyMap[week] = { week, attempted: 0, solved: 0 };
+      weeklyMap[week].attempted++;
+      if (isAC) weeklyMap[week].solved++;
+
+      if (!monthlyMap[month]) monthlyMap[month] = { month, attempted: 0, solved: 0, totalRuntime: 0, runtimeCount: 0 };
+      monthlyMap[month].attempted++;
+      if (isAC) monthlyMap[month].solved++;
+      if (sub.runtimeMs != null && sub.runtimeMs >= 0) {
+        monthlyMap[month].totalRuntime += sub.runtimeMs;
+        monthlyMap[month].runtimeCount++;
+      }
+    });
+
+    // Streak calculation
+    const sortedDays = Array.from(solvedDates).sort();
+    if (sortedDays.length > 0) {
+      let streak = 1;
+      for (let i = 1; i < sortedDays.length; i++) {
+        const diffDays = Math.round((new Date(sortedDays[i]) - new Date(sortedDays[i - 1])) / 86400000);
+        if (diffDays === 1) { streak++; maxStreak = Math.max(maxStreak, streak); }
+        else streak = 1;
+      }
+      const today     = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const lastDay   = sortedDays[sortedDays.length - 1];
+      currentStreak   = (lastDay === today || lastDay === yesterday) ? streak : 0;
+      maxStreak       = Math.max(maxStreak, currentStreak);
+    }
+
+    const tagPerformance = Object.entries(tagMap)
+      .map(([tag, data]) => ({
+        tag,
+        attempted:    data.attempted,
+        solved:       data.solved,
+        successRate:  data.attempted ? Math.round((data.solved / data.attempted) * 100) : 0,
+        avgRuntimeMs: data.runtimeCount ? Math.round(data.totalRuntime / data.runtimeCount) : null,
+      }))
+      .sort((a, b) => b.attempted - a.attempted)
+      .slice(0, 20);
+
+    const languageDistribution = Object.entries(langMap)
+      .map(([language, count]) => ({ language, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const monthlyTrend = Object.values(monthlyMap)
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .map(m => ({
+        month:        m.month,
+        attempted:    m.attempted,
+        solved:       m.solved,
+        successRate:  m.attempted ? Math.round((m.solved / m.attempted) * 100) : 0,
+        avgRuntimeMs: m.runtimeCount ? Math.round(m.totalRuntime / m.runtimeCount) : null,
+      }));
+
+    const weeklyTrend = Object.values(weeklyMap)
+      .sort((a, b) => a.week.localeCompare(b.week))
+      .slice(-12)
+      .map(w => ({
+        week:        w.week,
+        attempted:   w.attempted,
+        solved:      w.solved,
+        successRate: w.attempted ? Math.round((w.solved / w.attempted) * 100) : 0,
+      }));
+
+    const difficultyBreakdown = Object.entries(diffMap).map(([difficulty, data]) => ({
+      difficulty,
+      attempted:   data.attempted,
+      solved:      data.solved,
+      successRate: data.attempted ? Math.round((data.solved / data.attempted) * 100) : 0,
+    }));
+
+    const sourceMap = {};
+    submissions.forEach(sub => {
+      const src = sub.sourceType || 'practice';
+      if (!sourceMap[src]) sourceMap[src] = { attempted: 0, solved: 0 };
+      sourceMap[src].attempted++;
+      if (sub.verdict === 'Accepted') sourceMap[src].solved++;
+    });
+    const sourceBreakdown = Object.entries(sourceMap).map(([source, data]) => ({ source, ...data }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          totalAttempted,
+          totalSolved,
+          overallSuccessRate: totalAttempted ? Math.round((totalSolved / totalAttempted) * 100) : 0,
+          avgRuntimeMs:       runtimeCount ? Math.round(totalRuntime / runtimeCount) : null,
+          currentStreak,
+          maxStreak,
+        },
+        difficultyBreakdown,
+        tagPerformance,
+        languageDistribution,
+        monthlyTrend,
+        weeklyTrend,
+        sourceBreakdown,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
