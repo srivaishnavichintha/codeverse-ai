@@ -95,7 +95,8 @@ router.post('/comments/:id/vote',               protect,      discussionControll
 // INTERVIEW
 // ══════════════════════════════════════════════════════════
 router.post('/interview/start',                  protect, interviewController.startInterview);
-router.get( '/interview/stats',                  protect, interviewController.getDashboardStats);
+router.get( '/interview/stats',            protect, interviewController.getDashboardStats);
+router.get( '/interview/coding-analytics', protect, interviewController.getCodingPracticeAnalytics); // ← NEW
 router.get( '/interview/:sessionId',             protect, interviewController.getSession);
 router.get( '/interview/:sessionId/status',      protect, interviewController.getSessionStatus);
 router.post('/interview/:sessionId/submit-code', protect, interviewController.submitCode);
