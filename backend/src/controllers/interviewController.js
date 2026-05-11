@@ -324,17 +324,7 @@ async function getDashboardStats(req, res, next) {
   }
 }
 
-module.exports = {
-  startInterview,
-  submitCode,
-  checkQualification,
-  submitAnswer,
-  getSession,
-  getSessionStatus,
-  getJobStatus,
-  terminateSession,
-  getDashboardStats,
-};
+
 /**
  * GET /api/interview/coding-analytics
  * Broad coding practice analytics: per-tag performance, submission heatmap,
@@ -508,3 +498,16 @@ function getWeekNumber(date) {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
+
+module.exports = {
+  startInterview,
+  submitCode,
+  checkQualification,
+  submitAnswer,
+  getSession,
+  getSessionStatus,
+  getJobStatus,
+  terminateSession,
+  getDashboardStats,
+  getCodingPracticeAnalytics,
+};
