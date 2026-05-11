@@ -57,12 +57,16 @@ const BattleSchema = new mongoose.Schema(
       max: 180,
     },
 
+
+     player1RatingAtStart: { type: Number, default: 1200 },
+    player2RatingAtStart: { type: Number, default: 1200 },
+
     endsAt: {
       type: Date,
       required: true,
       index: true,
     },
-
+  
     // ─────────────────────────────────────────
     // Lifecycle timestamps
     // ─────────────────────────────────────────
