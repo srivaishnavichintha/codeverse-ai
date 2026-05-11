@@ -4,7 +4,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer
 } from 'recharts'
 import { useInterview } from '../../context/InterviewContext'
-import { evaluationData } from '../../data/interviewMockData'
+// import { evaluationData } from '../../data/interviewMockData'
 import { InterviewAPI } from '../../services/interviewService'
 import './Evaluation.css'
 

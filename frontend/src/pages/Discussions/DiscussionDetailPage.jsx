@@ -11,7 +11,7 @@ import {
 } from "../../services/discussions.service.js";
 import Icon from "../../components/Icon/Icon.jsx";
 import "./Discussions.css";
-import { timeAgo } from "../../data/discussionsData.js";
+// import { timeAgo } from "../../data/discussionsData.js";
 
 export default function DiscussionDetailPage() {
   const { discussionId } = useParams();

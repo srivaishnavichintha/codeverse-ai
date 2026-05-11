@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import {
-  INITIAL_SENT_INVITES, INITIAL_RECEIVED_INVITES,
-  getAvatarColor, CHALLENGE_PROBLEMS,
-} from "../../data/peerContestsData.js";
+// import {
+//   INITIAL_SENT_INVITES, INITIAL_RECEIVED_INVITES,
+//   getAvatarColor, CHALLENGE_PROBLEMS,
+// } from "../../data/peerContestsData.js";
 import Icon from "../../components/Icon/Icon.jsx";
 import "./PeerChallenge.css";
 import { useAuth } from "../../context/AuthContext.jsx";
