@@ -1,0 +1,70 @@
+{
+  "name": "codeverse-backend",
+  "version": "1.0.0",
+  "description": "CodeVerse Backend - Modular Scalable REST API For Collaborative Coding Platform",
+
+  "main": "src/server.js",
+
+  "type": "commonjs",
+
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/config/seed.js"
+  },
+
+  "systemArchitecture": {
+    "architecture_pattern": "Layered Modular Backend Architecture",
+    "api_style": "REST API",
+    "authentication": "JWT Authentication",
+    "database": "MongoDB + Mongoose ODM",
+    "validation": "Joi + Zod + Express Validator",
+    "security": [
+      "Helmet",
+      "Rate Limiting",
+      "Password Hashing",
+      "Input Validation"
+    ],
+    "background_jobs": "BullMQ Queue System",
+    "scheduler": "Node Cron",
+    "ai_modules": [
+      "Google Gemini",
+      "Groq AI"
+    ],
+    "core_features": [
+      "Authentication",
+      "Practice Problems",
+      "Contest Zone",
+      "Peer To Peer Challenges",
+      "Discussion Forums",
+      "Compiler Integration",
+      "AI Evaluation Support"
+    ]
+  },
+
+  "dependencies": {
+
+    "@google/generative-ai": "^0.24.1",
+    "groq-sdk": "^1.1.2",
+
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "express-async-errors": "^3.1.1",
+    "express-rate-limit": "^7.1.5",
+
+    "mongoose": "^8.0.0",
+    "mongoose-paginate-v2": "^1.7.4",
+
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+
+    "joi": "^18.2.1",
+    "zod": "^4.4.2",
+    "express-validator": "^7.0.1",
+
+    "bullmq": "^5.76.4",
+    "node-cron": "^4.2.1"
+}
+}

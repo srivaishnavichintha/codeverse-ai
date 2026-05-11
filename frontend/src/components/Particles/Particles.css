@@ -1,0 +1,30 @@
+.cv-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cv-particles span {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 50%;
+  background: var(--primary-teal);
+  animation: cv-particle-float linear infinite;
+  filter: blur(0.5px);
+}
+
+@keyframes cv-particle-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: var(--particle-opacity, 0.15);
+  }
+  50% {
+    transform: translateY(-50vh) translateX(15px);
+  }
+  100% {
+    transform: translateY(-110vh) translateX(-10px);
+    opacity: 0;
+  }
+}

@@ -1,0 +1,62 @@
+.cv-leaderboard-page {
+  padding: 28px 40px 60px;
+  width: 100%;
+}
+
+.cv-leaderboard-page .cv-header-bar {
+  margin-bottom: 30px;
+}
+
+.cv-table-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cv-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cv-table th {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-faint);
+  font-weight: 500;
+  text-align: left;
+  padding: 16px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cv-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+}
+
+.cv-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cv-table tbody tr {
+  transition: background 0.2s;
+}
+
+.cv-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cv-level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(144, 102, 255, 0.15);
+  color: var(--primary-purple);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(144, 102, 255, 0.3);
+}
