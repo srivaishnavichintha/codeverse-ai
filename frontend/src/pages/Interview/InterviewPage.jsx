@@ -7,6 +7,7 @@ import FollowUp from '../../components/FollowUp/FollowUp';
 import Evaluation from '../../components/Evaluation/Evaluation';
 import ViolationWarning from '../../components/shared/ViolationWarning';
 
+
 const pageTransition = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },

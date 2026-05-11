@@ -1,45 +1,83 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  Radar,
+  ResponsiveContainer
 } from 'recharts'
+
 import { useInterview } from '../../context/InterviewContext'
-// import { evaluationData } from '../../data/interviewMockData'
 import { InterviewAPI } from '../../services/interviewService'
+
 import './Evaluation.css'
 
-function AnimatedScore({ target, duration = 2000, color }) {
+function AnimatedScore({
+  target,
+  duration = 2000,
+  color
+}) {
   const [v, setV] = useState(0)
+
   const ref = useRef(null)
 
   useEffect(() => {
     const start = performance.now()
+
     const animate = (now) => {
-      const p = Math.min((now - start) / duration, 1)
+      const p = Math.min(
+        (now - start) / duration,
+        1
+      )
+
       const eased = 1 - Math.pow(1 - p, 4)
+
       setV(Math.round(eased * target))
-      if (p < 1) ref.current = requestAnimationFrame(animate)
+
+      if (p < 1) {
+        ref.current =
+          requestAnimationFrame(animate)
+      }
     }
-    ref.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(ref.current)
+
+    ref.current =
+      requestAnimationFrame(animate)
+
+    return () =>
+      cancelAnimationFrame(ref.current)
   }, [target, duration])
 
   return <span style={{ color }}>{v}</span>
 }
 
-function ScoreBar({ label, value, color = 'var(--teal-primary)' }) {
+function ScoreBar({
+  label,
+  value,
+  color = 'var(--teal-primary)'
+}) {
   return (
     <div className="eval-score-bar">
       <div className="esb-header">
-        <span className="esb-label">{label}</span>
-        <span className="esb-value">{value}</span>
+        <span className="esb-label">
+          {label}
+        </span>
+
+        <span className="esb-value">
+          {value}
+        </span>
       </div>
+
       <div className="esb-track">
         <motion.div
           className="esb-fill"
           initial={{ width: 0 }}
           animate={{ width: `${value}%` }}
-          transition={{ duration: 1.2, ease: [0.4,0,0.2,1], delay: 0.3 }}
+          transition={{
+            duration: 1.2,
+            ease: [0.4, 0, 0.2, 1],
+            delay: 0.3
+          }}
           style={{ background: color }}
         />
       </div>
@@ -47,95 +85,330 @@ function ScoreBar({ label, value, color = 'var(--teal-primary)' }) {
   )
 }
 
-const timelineColors = { start: 'var(--teal-primary)', positive: '#5eead4', neutral: 'var(--text-muted)', warning: '#14b8a6', end: 'var(--teal-primary)' }
+const timelineColors = {
+  start: 'var(--teal-primary)',
+  positive: '#5eead4',
+  neutral: 'var(--text-muted)',
+  warning: '#14b8a6',
+  end: 'var(--teal-primary)'
+}
 
 const stagger = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.5, ease: [0.4,0,0.2,1] } })
+  hidden: {
+    opacity: 0,
+    y: 16
+  },
+
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+
+    transition: {
+      delay: i * 0.08,
+      duration: 0.5,
+      ease: [0.4, 0, 0.2, 1]
+    }
+  })
 }
 
 export default function Evaluation() {
-  const { resetInterview, sessionId } = useInterview()
-  const [reportData, setReportData] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const {
+    resetInterview,
+    sessionId
+  } = useInterview()
+
+  const [reportData, setReportData] =
+    useState(null)
+
+  const [isLoading, setIsLoading] =
+    useState(true)
 
   useEffect(() => {
     if (!sessionId) {
-      setReportData(evaluationData)
+      setReportData(null)
       setIsLoading(false)
       return
     }
 
     let pollInterval
+
     const fetchReport = async () => {
       try {
-        await InterviewAPI.generateReport(sessionId)
+        await InterviewAPI.generateReport(
+          sessionId
+        )
       } catch (e) {
-        // Ignored, might already be generating
+        console.log(
+          'Report already generating'
+        )
       }
 
-      pollInterval = setInterval(async () => {
-        try {
-          const res = await InterviewAPI.getReport(sessionId)
-          if (res?.report?.generatedAt) {
-            const real = res.report
-            const blended = {
-              overallScore: real.overallScore || 0,
-              technicalScore: real.technicalScore || 70,
-              communicationScore: real.communicationScore || 70,
-              problemSolvingScore: real.problemSolvingScore || 70,
-              codeQualityScore: real.technicalScore ? Math.min(100, real.technicalScore + 5) : 75,
-              optimizationScore: real.problemSolvingScore ? Math.min(100, real.problemSolvingScore + 5) : 70,
-              confidenceScore: real.communicationScore ? Math.max(0, real.communicationScore - 5) : 80,
-              summary: real.summary || '',
-              recommendation: real.recommendation || 'No Recommendation',
-              strengths: real.strengths || [],
-              improvements: real.weaknesses || [],
-              eligibleCompanies: real.eligibleCompanies?.length ? real.eligibleCompanies : ['Top Tech Companies', 'Startups'],
-              suggestedTopics: real.suggestedTopics?.length ? real.suggestedTopics : ['Data Structures', 'Algorithms'],
-              behavioralImprovements: real.behavioralImprovements?.length ? real.behavioralImprovements : ['Provide clearer explanations while coding'],
-              hiringChance: real.overallScore || 50,
-              suspiciousActivity: '0 Flags',
-              violations: 0,
-              radarData: [
-                { subject: 'Algorithms', A: real.technicalScore || 70 },
-                { subject: 'Problem Solving', A: real.problemSolvingScore || 70 },
-                { subject: 'Communication', A: real.communicationScore || 70 },
-                { subject: 'Optimization', A: real.problemSolvingScore ? Math.min(100, real.problemSolvingScore + 5) : 70 },
-                { subject: 'Code Quality', A: real.technicalScore ? Math.min(100, real.technicalScore + 5) : 70 },
-              ],
-              timeline: [
-                { time: '00:00', event: 'Interview Started', type: 'start' },
-                { time: 'In Progress', event: 'Coding & AI Deep Dive', type: 'neutral' },
-                { time: 'End', event: 'Interview Completed', type: 'end' }
-              ]
+      pollInterval = setInterval(
+        async () => {
+          try {
+            const res =
+              await InterviewAPI.getReport(
+                sessionId
+              )
+
+            if (
+              res?.report?.generatedAt
+            ) {
+              const real = res.report
+
+              const blended = {
+                overallScore:
+                  real.overallScore || 0,
+
+                technicalScore:
+                  real.technicalScore ||
+                  70,
+
+                communicationScore:
+                  real.communicationScore ||
+                  70,
+
+                problemSolvingScore:
+                  real.problemSolvingScore ||
+                  70,
+
+                codeQualityScore:
+                  real.technicalScore
+                    ? Math.min(
+                        100,
+                        real.technicalScore +
+                          5
+                      )
+                    : 75,
+
+                optimizationScore:
+                  real.problemSolvingScore
+                    ? Math.min(
+                        100,
+                        real.problemSolvingScore +
+                          5
+                      )
+                    : 70,
+
+                confidenceScore:
+                  real.communicationScore
+                    ? Math.max(
+                        0,
+                        real.communicationScore -
+                          5
+                      )
+                    : 80,
+
+                summary:
+                  real.summary || '',
+
+                recommendation:
+                  real.recommendation ||
+                  'No Recommendation',
+
+                strengths:
+                  real.strengths || [],
+
+                improvements:
+                  real.weaknesses || [],
+
+                eligibleCompanies:
+                  real
+                    .eligibleCompanies
+                    ?.length
+                    ? real.eligibleCompanies
+                    : [
+                        'Top Tech Companies',
+                        'Startups'
+                      ],
+
+                suggestedTopics:
+                  real.suggestedTopics
+                    ?.length
+                    ? real.suggestedTopics
+                    : [
+                        'Data Structures',
+                        'Algorithms'
+                      ],
+
+                behavioralImprovements:
+                  real
+                    .behavioralImprovements
+                    ?.length
+                    ? real.behavioralImprovements
+                    : [
+                        'Provide clearer explanations while coding'
+                      ],
+
+                hiringChance:
+                  real.overallScore ||
+                  50,
+
+                suspiciousActivity:
+                  '0 Flags',
+
+                violations: 0,
+
+                radarData: [
+                  {
+                    subject:
+                      'Algorithms',
+                    A:
+                      real.technicalScore ||
+                      70
+                  },
+
+                  {
+                    subject:
+                      'Problem Solving',
+                    A:
+                      real.problemSolvingScore ||
+                      70
+                  },
+
+                  {
+                    subject:
+                      'Communication',
+                    A:
+                      real.communicationScore ||
+                      70
+                  },
+
+                  {
+                    subject:
+                      'Optimization',
+                    A:
+                      real.problemSolvingScore
+                        ? Math.min(
+                            100,
+                            real.problemSolvingScore +
+                              5
+                          )
+                        : 70
+                  },
+
+                  {
+                    subject:
+                      'Code Quality',
+                    A:
+                      real.technicalScore
+                        ? Math.min(
+                            100,
+                            real.technicalScore +
+                              5
+                          )
+                        : 70
+                  }
+                ],
+
+                timeline: [
+                  {
+                    time: '00:00',
+                    event:
+                      'Interview Started',
+                    type: 'start'
+                  },
+
+                  {
+                    time: 'In Progress',
+                    event:
+                      'Coding & AI Deep Dive',
+                    type: 'neutral'
+                  },
+
+                  {
+                    time: 'End',
+                    event:
+                      'Interview Completed',
+                    type: 'end'
+                  }
+                ]
+              }
+
+              setReportData(blended)
+
+              setIsLoading(false)
+
+              clearInterval(
+                pollInterval
+              )
             }
-            setReportData(blended)
-            setIsLoading(false)
-            clearInterval(pollInterval)
+          } catch (e) {
+            console.error(e)
           }
-        } catch (e) {
-          console.error(e)
-        }
-      }, 3000)
+        },
+        3000
+      )
     }
 
     fetchReport()
-    return () => clearInterval(pollInterval)
+
+    return () =>
+      clearInterval(pollInterval)
   }, [sessionId])
 
   if (isLoading) {
     return (
-      <div className="eval-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16 }}>
-        <span className="perm-spinner" style={{ width: 32, height: 32, borderWidth: 3 }} />
-        <div style={{ color: 'var(--teal-primary)', fontFamily: 'var(--font-mono)' }}>Generating final AI report...</div>
+      <div
+        className="eval-page"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent:
+            'center',
+          height: '100vh',
+          flexDirection: 'column',
+          gap: 16
+        }}
+      >
+        <span
+          className="perm-spinner"
+          style={{
+            width: 32,
+            height: 32,
+            borderWidth: 3
+          }}
+        />
+
+        <div
+          style={{
+            color:
+              'var(--teal-primary)',
+            fontFamily:
+              'var(--font-mono)'
+          }}
+        >
+          Generating final AI
+          report...
+        </div>
       </div>
     )
   }
 
-  const ev = reportData || evaluationData
+  const ev = reportData
 
-  const recColor = ev.recommendation.includes('Strongly') ? '#5eead4' : ev.recommendation.includes('Conditional') ? '#14b8a6' : '#0f766e'
+  if (!ev) {
+    return (
+      <div className="eval-page">
+        <div className="card">
+          No evaluation report
+          found.
+        </div>
+      </div>
+    )
+  }
+
+  const recColor =
+    ev.recommendation.includes(
+      'Strongly'
+    )
+      ? '#5eead4'
+      : ev.recommendation.includes(
+            'Conditional'
+          )
+        ? '#14b8a6'
+        : '#0f766e'
+
 
   return (
     <div className="eval-page">

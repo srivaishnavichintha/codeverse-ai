@@ -6,6 +6,9 @@ export const getDiscussions = () =>
 export const getDiscussion = (id) =>
   api.get(`/discussions/${id}`);
 
+export const createDiscussion = (payload) =>
+  api.post("/discussions", payload);
+
 export const deleteDiscussion = (id) =>
   api.delete(`/discussions/${id}`);
 

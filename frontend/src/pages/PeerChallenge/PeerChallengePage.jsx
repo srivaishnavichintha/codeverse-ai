@@ -1,29 +1,79 @@
-import { useEffect, useState, useMemo } from "react";
-// import {
-//   INITIAL_SENT_INVITES, INITIAL_RECEIVED_INVITES,
-//   getAvatarColor, CHALLENGE_PROBLEMS,
-// } from "../../data/peerContestsData.js";
+import { useEffect, useState } from "react";
 import Icon from "../../components/Icon/Icon.jsx";
 import "./PeerChallenge.css";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { api } from "../../services/apiClient.js";
 
+function getAvatarColor(seed) {
+  const colors = [
+    "cv-avatar-teal",
+    "cv-avatar-purple",
+    "cv-avatar-gold",
+    "cv-avatar-rose",
+  ];
+
+  if (!seed) return colors[0];
+
+  let hash = 0;
+
+  for (let i = 0; i < seed.length; i++) {
+    hash =
+      seed.charCodeAt(i) +
+      ((hash << 5) - hash);
+  }
+
+  return colors[
+    Math.abs(hash) % colors.length
+  ];
+}
+
 export default function PeerChallengePage() {
   const { user } = useAuth();
-  
-  const [showInvites, setShowInvites] = useState(false);
-  const [sentInvites, setSentInvites] = useState(INITIAL_SENT_INVITES);
-  const [receivedInvites, setReceivedInvites] = useState(INITIAL_RECEIVED_INVITES);
-  const [challenged, setChallenged] = useState(null);
-  const [inMatch, setInMatch] = useState(false);
-  const [matchProgress, setMatchProgress] = useState(0);
-  const [showWinner, setShowWinner] = useState(false);
-  const [winner, setWinner] = useState(null);
-  
-  const [leaderboard, setLeaderboard] = useState([]);
+
+  const [showInvites, setShowInvites] =
+    useState(false);
+
+  const [sentInvites, setSentInvites] =
+    useState([]);
+
+  const [
+    receivedInvites,
+    setReceivedInvites,
+  ] = useState([]);
+
+  const [challenged, setChallenged] =
+    useState(null);
+
+  const [inMatch, setInMatch] =
+    useState(false);
+
+  const [matchProgress, setMatchProgress] =
+    useState(0);
+
+  const [showWinner, setShowWinner] =
+    useState(false);
+
+  const [winner, setWinner] =
+    useState(null);
+
+  const [leaderboard, setLeaderboard] =
+    useState([]);
+
   const [peers, setPeers] = useState([]);
-  const [myStats, setMyStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const [myStats, setMyStats] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [visible, setVisible] =
+    useState([]);
+
+  const [
+    challengeTarget,
+    setChallengeTarget,
+  ] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -31,74 +81,177 @@ export default function PeerChallengePage() {
 
   const fetchData = async () => {
     if (!user) return;
+
     try {
       setLoading(true);
-      const [lbRes, statsRes, incomingRes, outgoingRes] = await Promise.all([
-        api.get("/users/leaderboard?limit=20"),
+
+      const [
+        lbRes,
+        statsRes,
+        incomingRes,
+        outgoingRes,
+      ] = await Promise.all([
+        api.get(
+          "/users/leaderboard?limit=20"
+        ),
+
         api.get("/users/me/stats"),
+
         api.get("/peers/incoming"),
-        api.get("/peers/outgoing")
+
+        api.get("/peers/outgoing"),
       ]);
 
-      const lbData = lbRes.data?.data?.users || [];
-      const statsData = statsRes.data?.data || {};
+      const lbData =
+        lbRes.data?.data?.users || [];
 
-      const mappedLeaderboard = lbData.map(u => ({
-        id: u._id,
-        rank: u.rank,
-        username: u.username,
-        name: u.displayName || u.username,
-        avatar: u.avatar || u.username.slice(0, 2).toUpperCase(),
-        level: u.level || 1,
-        problemsSolved: u.stats?.totalSolved || 0,
-        points: u.rating || 0,
-        accuracy: u.stats?.totalSubmissions ? Math.round((u.stats.totalSolved / u.stats.totalSubmissions) * 100) : 0,
-        contestWins: u.contestWins || 0,
-        streak: u.streak || 0,
-        status: ["online", "offline", "in-contest"][Math.floor(Math.random() * 3)],
-      }));
+      const statsData =
+        statsRes.data?.data || {};
+
+      const mappedLeaderboard =
+        lbData.map((u) => ({
+          id: u._id,
+
+          rank: u.rank,
+
+          username: u.username,
+
+          name:
+            u.displayName ||
+            u.username,
+
+          avatar:
+            u.avatar ||
+            u.username
+              .slice(0, 2)
+              .toUpperCase(),
+
+          level: u.level || 1,
+
+          problemsSolved:
+            u.stats?.totalSolved || 0,
+
+          points: u.rating || 0,
+
+          accuracy:
+            u.stats?.totalSubmissions
+              ? Math.round(
+                  (u.stats.totalSolved /
+                    u.stats
+                      .totalSubmissions) *
+                    100
+                )
+              : 0,
+
+          contestWins:
+            u.contestWins || 0,
+
+          streak: u.streak || 0,
+
+          status: [
+            "online",
+            "offline",
+            "in-contest",
+          ][
+            Math.floor(
+              Math.random() * 3
+            )
+          ],
+        }));
 
       setLeaderboard(mappedLeaderboard);
-      setPeers(mappedLeaderboard.filter(u => u.username !== user.username));
+
+      setPeers(
+        mappedLeaderboard.filter(
+          (u) =>
+            u.username !== user.username
+        )
+      );
+
       setMyStats(statsData.peerStats);
 
-      // Map incoming invites
-      const incoming = (incomingRes.data?.challenges || []).map(inv => ({
+      const incoming = (
+        incomingRes.data?.challenges ||
+        []
+      ).map((inv) => ({
         id: inv._id,
+
         from: {
           id: inv.challenger._id,
-          username: inv.challenger.username,
-          name: inv.challenger.username,
-          avatar: inv.challenger.username.slice(0, 2).toUpperCase(),
-          level: inv.challenger.level || 1,
-          status: "online"
+
+          username:
+            inv.challenger.username,
+
+          name:
+            inv.challenger.username,
+
+          avatar:
+            inv.challenger.username
+              .slice(0, 2)
+              .toUpperCase(),
+
+          level:
+            inv.challenger.level || 1,
+
+          status: "online",
         },
+
         problem: inv.problemTitle,
+
         status: inv.status,
-        sentAt: new Date(inv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+
+        sentAt: new Date(
+          inv.createdAt
+        ).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+
         scheduledAt: inv.scheduledAt,
-        expiresAt: inv.expiresAt
+
+        expiresAt: inv.expiresAt,
       }));
 
-      // Map outgoing invites
-      const outgoing = (outgoingRes.data?.challenges || []).map(inv => ({
+      const outgoing = (
+        outgoingRes.data?.challenges ||
+        []
+      ).map((inv) => ({
         id: inv._id,
+
         to: {
           id: inv.opponent._id,
-          username: inv.opponent.username,
-          name: inv.opponent.username,
-          avatar: inv.opponent.username.slice(0, 2).toUpperCase(),
+
+          username:
+            inv.opponent.username,
+
+          name:
+            inv.opponent.username,
+
+          avatar:
+            inv.opponent.username
+              .slice(0, 2)
+              .toUpperCase(),
         },
+
         problem: inv.problemTitle,
+
         status: inv.status,
-        sentAt: new Date(inv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+
+        sentAt: new Date(
+          inv.createdAt
+        ).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+
         scheduledAt: inv.scheduledAt,
-        expiresAt: inv.expiresAt
+
+        expiresAt: inv.expiresAt,
       }));
 
       setReceivedInvites(incoming);
-      setSentInvites(outgoing);
 
+      setSentInvites(outgoing);
     } catch (err) {
       console.error(err);
     } finally {
@@ -106,95 +259,177 @@ export default function PeerChallengePage() {
     }
   };
 
-  const [visible, setVisible] = useState([]);
   useEffect(() => {
     if (peers.length > 0) {
       peers.forEach((_, i) => {
-        setTimeout(() => setVisible((v) => [...new Set([...v, i])]), i * 80);
+        setTimeout(() => {
+          setVisible((v) => [
+            ...new Set([...v, i]),
+          ]);
+        }, i * 80);
       });
     }
   }, [peers]);
 
-  const pendingReceived = receivedInvites.filter((i) => i.status === "pending").length;
+  const pendingReceived =
+    receivedInvites.filter(
+      (i) => i.status === "pending"
+    ).length;
 
-  const [challengeTarget, setChallengeTarget] = useState(null);
-
-  const handleChallengeClick = (peer) => {
+  const handleChallengeClick = (
+    peer
+  ) => {
     setChallengeTarget(peer);
   };
 
   const submitChallenge = async (e) => {
     e.preventDefault();
+
     if (!challengeTarget) return;
 
-    const formData = new FormData(e.target);
-    const scheduledAtValue = formData.get('scheduledAt');
-    const scheduledAt = new Date(scheduledAtValue).toISOString();
-    const durationMinutes = parseInt(formData.get('durationMinutes') || '30', 10);
-    const numberOfProblems = parseInt(formData.get('numberOfProblems') || '1', 10);
+    const formData = new FormData(
+      e.target
+    );
+
+    const scheduledAtValue =
+      formData.get("scheduledAt");
+
+    const scheduledAt = new Date(
+      scheduledAtValue
+    ).toISOString();
+
+    const durationMinutes =
+      parseInt(
+        formData.get(
+          "durationMinutes"
+        ) || "30",
+        10
+      );
+
+    const numberOfProblems =
+      parseInt(
+        formData.get(
+          "numberOfProblems"
+        ) || "1",
+        10
+      );
 
     try {
-      await api.post('/peers/challenge', {
-        opponentId: challengeTarget.id,
-        scheduledAt,
-        durationMinutes,
-        numberOfProblems
-      });
-      // Show brief notification
-      const el = document.createElement("div");
-      el.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--primary-teal);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeUp 0.3s ease;box-shadow:0 10px 25px rgba(0,0,0,0.5);`;
-      el.textContent = `Challenge sent to ${challengeTarget.name}!`;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 3000);
+      await api.post(
+        "/peers/challenge",
+        {
+          opponentId:
+            challengeTarget.id,
 
-      // Refresh data
+          scheduledAt,
+
+          durationMinutes,
+
+          numberOfProblems,
+        }
+      );
+
       setChallengeTarget(null);
+
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to send challenge");
+
+      alert(
+        err.response?.data?.message ||
+          "Failed to send challenge"
+      );
     }
   };
 
   const handleAccept = async (id) => {
     try {
-      await api.post(`/peers/${id}/respond`, { action: 'accept' });
+      await api.post(
+        `/peers/${id}/respond`,
+        {
+          action: "accept",
+        }
+      );
+
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to accept challenge");
     }
   };
 
   const handleDecline = async (id) => {
     try {
-      await api.post(`/peers/${id}/respond`, { action: 'reject' });
+      await api.post(
+        `/peers/${id}/respond`,
+        {
+          action: "reject",
+        }
+      );
+
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to decline challenge");
     }
   };
 
-  const winRate = (myStats?.contestsParticipated > 0) ? Math.round((myStats.contestWins / myStats.contestsParticipated) * 100) : 0;
+  const winRate =
+    myStats?.contestsParticipated > 0
+      ? Math.round(
+          (myStats.contestWins /
+            myStats.contestsParticipated) *
+            100
+        )
+      : 0;
 
   if (loading || !user || !myStats) {
-    return <div style={{ padding: 40, color: "var(--text-faint)" }}>Loading Arena...</div>;
+    return (
+      <div
+        style={{
+          padding: 40,
+          color:
+            "var(--text-faint)",
+        }}
+      >
+        Loading Arena...
+      </div>
+    );
   }
 
   const currentUserData = {
     username: user.username,
-    name: user.displayName || user.username,
-    avatar: user.avatar || user.username.slice(0, 2).toUpperCase(),
+
+    name:
+      user.displayName ||
+      user.username,
+
+    avatar:
+      user.avatar ||
+      user.username
+        .slice(0, 2)
+        .toUpperCase(),
+
     level: myStats.level || 1,
+
     streak: myStats.streak || 0,
-    problemsSolved: user.stats?.totalSolved || 0,
-    contestWins: myStats.contestWins || 0,
-    contestsParticipated: myStats.contestsParticipated || 0,
+
+    problemsSolved:
+      user.stats?.totalSolved || 0,
+
+    contestWins:
+      myStats.contestWins || 0,
+
+    contestsParticipated:
+      myStats.contestsParticipated ||
+      0,
+
     rank: user.rating || 0,
+
     points: user.rating || 0,
-    nextLevelPoints: (myStats.level || 1) * 1000,
+
+    nextLevelPoints:
+      (myStats.level || 1) * 1000,
   };
+
 
   return (
     <div className="cv-peer-layout">

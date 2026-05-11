@@ -4,8 +4,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-   DISCUSSION_TAGS, CATEGORIES, TRENDING_POSTS,
-  TOP_CONTRIBUTORS, timeAgo, POST_TYPE_MAP,
+   DISCUSSION_TAGS, CATEGORIES,
+   timeAgo, POST_TYPE_MAP,
 } from "../../data/discussionsData.js";
 import { POTDAPI } from "../../services/problemsService.js";
 import { deleteDiscussion } from "../../services/discussions.service.js";
