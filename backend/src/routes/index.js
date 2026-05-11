@@ -6,6 +6,7 @@ const router  = express.Router();
 const { authenticate: protect, optionalAuth, authorize } = require('../middleware/auth');
 const PeerRoutes = require('./Peer');
 const notificationRoutes = require('./notificationRoutes');
+const contestZoneRoutes = require('../modules/contestZone/routes/contestZone.routes');
 
 // ── Controllers ────────────────────────────────────────────
 const authController               = require('../controllers/authController');
@@ -140,6 +141,11 @@ router.post('/potd/regenerate', protect, authorize('admin'), potdController.rege
 // USER STATS (convenience endpoint for frontend dashboard)
 // ══════════════════════════════════════════════════════════
 router.get('/user/problem-stats', protect, userController.getMyStats);
+
+// ══════════════════════════════════════════════════════════
+// CONTEST ZONE
+// ══════════════════════════════════════════════════════════
+router.use('/contest-zone', contestZoneRoutes);
 
 // ══════════════════════════════════════════════════════════
 // PEER-TO-PEER

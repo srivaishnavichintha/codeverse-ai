@@ -65,6 +65,7 @@
     "express-validator": "^7.0.1",
 
     "bullmq": "^5.76.4",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.7.4"
 }
 }

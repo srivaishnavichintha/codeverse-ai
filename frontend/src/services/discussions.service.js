@@ -35,3 +35,4 @@ export const voteComment = (id) =>
 
 export const pinDiscussion = (id) =>
   api.post(`/discussions/${id}/pin`);
+

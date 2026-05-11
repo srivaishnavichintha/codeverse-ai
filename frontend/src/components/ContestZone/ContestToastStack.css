@@ -1,0 +1,126 @@
+/* ContestToastStack.css
+   Floating contest notification toasts — bottom-right corner.
+   Extends the CodeVerse design system (uses all CV CSS vars). */
+
+.cv-cz-toast-stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none; /* let clicks pass through the container */
+  max-width: 360px;
+  width: calc(100vw - 48px);
+}
+
+.cv-cz-toast {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-bg-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 13px 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px var(--border-subtle);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.cv-cz-toast:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+[role="button"].cv-cz-toast { cursor: pointer; }
+
+/* Left accent bar */
+.cv-cz-toast__bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--toast-accent, var(--primary-teal));
+}
+
+/* Icon */
+.cv-cz-toast__icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Body */
+.cv-cz-toast__body { flex: 1; min-width: 0; }
+.cv-cz-toast__label {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--toast-accent, var(--light-teal));
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cv-cz-toast__msg {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Close button */
+.cv-cz-toast__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+.cv-cz-toast__close:hover {
+  background: var(--rose-soft);
+  border-color: var(--rose);
+  color: var(--rose);
+}
+
+/* Progress bar — 5s animation */
+.cv-cz-toast__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--toast-accent, var(--primary-teal));
+  opacity: 0.45;
+  border-radius: 0 0 14px 14px;
+  animation: cv-toast-shrink 5s linear forwards;
+}
+
+@keyframes cv-toast-shrink {
+  from { width: 100%; }
+  to   { width: 0%;   }
+}
+
+/* Mobile: bottom full-width */
+@media (max-width: 480px) {
+  .cv-cz-toast-stack {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+}
