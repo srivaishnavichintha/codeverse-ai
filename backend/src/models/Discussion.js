@@ -42,6 +42,13 @@ DiscussionSchema.index({ author: 1, createdAt: -1 });
 DiscussionSchema.index({ tags: 1, createdAt: -1 });
 DiscussionSchema.index({ title: 'text', body: 'text' });  // full-text
 
+// ── Compound indexes covering isDeleted filter (used on every list query) ──
+// getAllDiscussions: { isDeleted: false }, sort createdAt:-1 or upvoteCount:-1
+DiscussionSchema.index({ isDeleted: 1, createdAt: -1 });
+DiscussionSchema.index({ isDeleted: 1, upvoteCount: -1, commentCount: -1 }); // getTrending
+// getTopContributors aggregation: $match { isDeleted: false } → $group by author
+DiscussionSchema.index({ isDeleted: 1, author: 1 });
+
 DiscussionSchema.plugin(mongoosePaginate);
 
 // ─────────────────────────────────────────────
