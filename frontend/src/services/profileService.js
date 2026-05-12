@@ -2,11 +2,11 @@
 import api from './api';
 
 export async function fetchFullProfile(username) {
-  const { data } = await api.get(`/profile/${encodeURIComponent(username)}/full`);
+  const { data } = await api.get(`/users/${encodeURIComponent(username)}`);
   return data;
 }
 
 export async function updateMyProfile(patch) {
-  const { data } = await api.patch('/profile/me', patch);
+  const { data } = await api.patch('/users/me', patch);
   return data;
 }

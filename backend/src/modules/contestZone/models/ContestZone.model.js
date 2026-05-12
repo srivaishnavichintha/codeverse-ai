@@ -105,9 +105,7 @@ const contestZoneSchema = new mongoose.Schema(
 
     // ── Invite (private contests) ──────────────────────────
     inviteCode: {
-      type: String,
-      unique: true,
-      sparse: true,
+      type: String,   // uniqueness is enforced by the schema.index() below
     },
 
     // ── Anti-cheat ────────────────────────────────────────
@@ -133,7 +131,7 @@ const contestZoneSchema = new mongoose.Schema(
 contestZoneSchema.index({ status: 1, type: 1 });
 contestZoneSchema.index({ createdBy: 1, status: 1 });
 contestZoneSchema.index({ status: 1, createdAt: -1 });
-contestZoneSchema.index({ inviteCode: 1 }, { sparse: true });
+contestZoneSchema.index({ inviteCode: 1 }, { unique: true, sparse: true });
 
 // ── Virtual: isFull ───────────────────────────────────────
 contestZoneSchema.virtual('isFull').get(function () {

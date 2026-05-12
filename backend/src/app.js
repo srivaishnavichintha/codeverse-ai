@@ -51,7 +51,11 @@ if (process.env.NODE_ENV !== 'test') {
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 // All endpoints live under /api to match the frontend's VITE_API_URL setting.
+const rateLimiter = require('./middleware/rateLimiter');
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 const apiRouter = require('./routes/index');
+app.use('/api', rateLimiter);
 app.use('/api', apiRouter);
 
 // ── 404 handler ───────────────────────────────────────────────────────────────

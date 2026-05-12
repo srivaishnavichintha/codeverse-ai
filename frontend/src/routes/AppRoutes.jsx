@@ -32,6 +32,7 @@ import LeaderboardPage from '../pages/Leaderboard/LeaderboardPage.jsx';
 import ContestZonePage    from '../pages/ContestZone/ContestZonePage.jsx';
 import ContestDetailPage  from '../pages/ContestZone/ContestDetailPage.jsx';
 import ContestHistoryPage from '../pages/ContestZone/ContestHistoryPage.jsx';
+import ProfilePage from '../pages/ProfilePage.jsx';
 
 /**
  * ProtectedRoute
@@ -88,6 +89,7 @@ export default function AppRoutes() {
           path="/discussions/:discussionId"
           element={<DiscussionDetailPage />}
         />
+        <Route path="/profile" element={<ProfilePage />} />
 
         {/* ── Contest Zone ───────────────────────────────────────────── */}
         <Route path="/contest-zone" element={<ContestZonePage />} />
