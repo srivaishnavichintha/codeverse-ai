@@ -1,7 +1,7 @@
 'use strict';
 
 const InterviewService = require('../services/InterviewService');
-const QueueService = require('../services/QueueService');
+const { QueueService } = require('../services/QueueService');
 
 /**
  * POST /api/interview/start

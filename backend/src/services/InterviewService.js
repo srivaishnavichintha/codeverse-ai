@@ -5,7 +5,7 @@ const InterviewQuestion = require('../models/InterviewQuestion');
 const Problem           = require('../models/Problem');
 const Submission        = require('../models/Submission');
 const CreditService     = require('./CreditService');
-const QueueService      = require('./QueueService');
+const { QueueService }      = require('./QueueService');
 
 const INTERVIEW_CREDIT_COST    = parseInt(process.env.INTERVIEW_CREDIT_COST    || '10', 10);
 const CODING_DEADLINE_MINUTES  = parseInt(process.env.CODING_DEADLINE_MINUTES  || '90', 10);

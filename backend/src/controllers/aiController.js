@@ -4,7 +4,7 @@ const AIService = require('../services/AIService');
 const AIResponse = require('../models/AIResponse');
 const InterviewSession = require('../models/InterviewSession');
 const InterviewQuestion = require('../models/InterviewQuestion');
-const QueueService = require('../services/QueueService');
+const { QueueService } = require('../services/QueueService');
 
 /**
  * GET /api/ai/sessions/:sessionId/questions
