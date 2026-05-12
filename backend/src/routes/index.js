@@ -63,8 +63,9 @@ router.get('/problems/:problemId/submissions', protect, submissionController.get
 // ══════════════════════════════════════════════════════════
 // CODE EXECUTION
 // ══════════════════════════════════════════════════════════
-router.post('/code/run',    protect, codeController.runCode);
-router.post('/code/submit', protect, codeController.submitCode);
+router.post('/code/run',        protect, codeController.runCode);
+router.post('/code/submit',     protect, codeController.submitCode);
+router.post('/code/save-draft', protect, codeController.saveDraft);
 
 // ══════════════════════════════════════════════════════════
 // PEER CHALLENGES

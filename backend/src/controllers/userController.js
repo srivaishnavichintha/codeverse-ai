@@ -82,6 +82,15 @@ exports.getLeaderboard = async (req, res, next) => {
     const filter = {};
     if (req.query.country) filter.country = req.query.country;
 
+    // Rating-band filter — used by matchmaking "players near you" discovery
+    const ratingMin = parseInt(req.query.ratingMin, 10);
+    const ratingMax = parseInt(req.query.ratingMax, 10);
+    if (!isNaN(ratingMin) || !isNaN(ratingMax)) {
+      filter.rating = {};
+      if (!isNaN(ratingMin)) filter.rating.$gte = ratingMin;
+      if (!isNaN(ratingMax)) filter.rating.$lte = ratingMax;
+    }
+
     const [users, total] = await Promise.all([
       User.find(filter)
         .select('username displayName avatar rating stats.totalSolved country level streak contestWins contestsParticipated wins losses stats.totalSubmissions')

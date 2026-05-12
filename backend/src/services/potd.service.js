@@ -35,11 +35,16 @@ async function getTodayPOTD() {
   // Auto-select a new problem for today
   const problem = await selectProblemForToday();
 
-  const potd = await POTD.create({
-    date: today,
-    problem: problem._id,
-    selectionMethod: 'auto',
-  });
+  // Use upsert so concurrent requests racing past the findOne above
+  // don't both attempt POTD.create for the same date (duplicate key E11000).
+  // $setOnInsert means: only write these fields if we are actually inserting.
+  // If another request already inserted first, the upsert is a no-op and we
+  // just get back the existing document.
+  const potd = await POTD.findOneAndUpdate(
+    { date: today },
+    { $setOnInsert: { problem: problem._id, selectionMethod: 'auto' } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
   const populated = await POTD.findById(potd._id).populate('problem').lean();
 

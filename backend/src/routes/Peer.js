@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-// const { createChallenge } = require('../controllers/Peer/Challenges');
 const {
   createChallenge,
   respondToChallenge,
@@ -15,7 +14,20 @@ const {
   getBattleStartInfo,
   evaluateBattleController
 } = require('../controllers/Peer/Battlecontroller');
+const {
+  enterQueue,
+  getQueueStatus,
+  leaveQueue,
+} = require('../controllers/Peer/MatchmakeController');
 
+
+//----Matchmaking Routes-----//
+// POST   /api/peers/matchmake         — enter queue (or instant-pair if opponent found)
+// GET    /api/peers/matchmake/status  — poll for paired battle
+// DELETE /api/peers/matchmake         — cancel and leave queue
+router.post(  '/matchmake',        auth.authenticate, enterQueue);
+router.get(   '/matchmake/status', auth.authenticate, getQueueStatus);
+router.delete('/matchmake',        auth.authenticate, leaveQueue);
 
 //----Challenge Routes-----//
 router.post('/challenge', auth.authenticate, createChallenge);       // To Create Challenge

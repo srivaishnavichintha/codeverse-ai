@@ -521,3 +521,4 @@ success = !!parsedResponse;
   }
 }
 
+module.exports = AIService;
