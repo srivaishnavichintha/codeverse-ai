@@ -11,7 +11,6 @@ exports.getMyBattles = async (req, res, next) => {
     const userId = req.user.id;
     const { status } = req.query;
 
-    // Base query
     const query = {
       $or: [
         { player1Id: userId },
@@ -19,7 +18,6 @@ exports.getMyBattles = async (req, res, next) => {
       ],
     };
 
-    // Optional filtering
     if (status === 'active') {
       query.status = { $in: ['pending', 'ongoing', 'evaluating'] };
     } else if (status === 'completed') {
@@ -35,13 +33,10 @@ exports.getMyBattles = async (req, res, next) => {
     for (const battle of battles) {
       await checkAndEvaluateBattle(battle);
     }
-    // Format response (important)
+
     const formatted = battles.map((battle) => {
       const isPlayer1 = battle.player1Id._id.toString() === userId;
-
-      const opponent = isPlayer1
-        ? battle.player2Id
-        : battle.player1Id;
+      const opponent = isPlayer1 ? battle.player2Id : battle.player1Id;
 
       return {
         battleId: battle._id,
@@ -66,9 +61,6 @@ exports.getMyBattles = async (req, res, next) => {
   }
 };
 
-
-// If you already have a service → use that instead
-// const { createSubmission } = require('../../services/submissionService');
 
 exports.submitBattleCode = async (req, res, next) => {
   try {
@@ -96,17 +88,13 @@ exports.submitBattleCode = async (req, res, next) => {
     if (battle.isExpired()) {
       battle.status = 'expired';
       await battle.save();
-
-      return res.status(400).json({
-        message: 'Battle time expired',
-      });
+      return res.status(400).json({ message: 'Battle time expired' });
     }
 
     await checkAndEvaluateBattle(battle);
 
     const targetProblemId = problemId || battle.problemIds[0];
 
-    // 🧠 CREATE SUBMISSION
     const submission = await Submission.create({
       user: userId,
       problem: targetProblemId,
@@ -117,10 +105,8 @@ exports.submitBattleCode = async (req, res, next) => {
       verdict: 'Pending',
     });
 
-    //  EXECUTE CODE
     await executeSubmission(submission);
 
-    //  UPDATE PLAYER STATS
     const playerStat = battle.playerStats.find(
       (p) => p.user.toString() === userId
     );
@@ -153,38 +139,29 @@ exports.submitBattleCode = async (req, res, next) => {
 };
 
 
-//To get the battle information
 exports.getBattleStartInfo = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { battleId } = req.params;
 
-    // 1. Fetch battle
     const battle = await Battle.findById(battleId);
     if (!battle) {
       return res.status(404).json({ message: 'Battle not found' });
     }
 
-    // 2. Check user belongs to battle
     if (!battle.hasPlayer(userId)) {
       return res.status(403).json({ message: 'Not part of this battle' });
     }
 
     const now = new Date();
     await checkAndEvaluateBattle(battle);
-    // 3. Calculate time left to start
+
     const timeToStartMs = battle.scheduledAt - now;
-    const timeToStart = timeToStartMs > 0
-      ? Math.floor(timeToStartMs / 1000)
-      : 0;
+    const timeToStart = timeToStartMs > 0 ? Math.floor(timeToStartMs / 1000) : 0;
 
-    // 4. Calculate time left to end
     const timeToEndMs = battle.endsAt - now;
-    const timeToEnd = timeToEndMs > 0
-      ? Math.floor(timeToEndMs / 1000)
-      : 0;
+    const timeToEnd = timeToEndMs > 0 ? Math.floor(timeToEndMs / 1000) : 0;
 
-    // 5. Control problem visibility
     const showProblem = now >= battle.scheduledAt;
 
     res.status(200).json({
@@ -204,7 +181,7 @@ exports.getBattleStartInfo = async (req, res, next) => {
   }
 };
 
-// Evalulation Controller for battle 
+
 exports.evaluateBattleController = async (req, res, next) => {
   try {
     const { battleId } = req.params;
@@ -225,7 +202,6 @@ exports.evaluateBattleController = async (req, res, next) => {
       return res.status(400).json(result);
     }
 
-    // Update battle
     battle.status = 'completed';
     battle.winnerId = result.winnerId;
     battle.resultReason = result.reason;
@@ -233,30 +209,48 @@ exports.evaluateBattleController = async (req, res, next) => {
 
     if (result.winnerId) {
       const User = require('../../models/User');
-      const winner = await User.findById(result.winnerId);
-      if (winner) {
-       const BATTLE_GAIN = 10;
-winner.rating += BATTLE_GAIN;
-winner.wins = (winner.wins || 0) + 1;
-winner.ratingHistory.push({ label: `B${battle._id.toString().slice(-4)}`, score: winner.rating, win: true });
-await winner.save();
 
-loser.rating = Math.max(0, (loser.rating ?? 1200) - BATTLE_GAIN);
-loser.losses = (loser.losses || 0) + 1;
-loser.ratingHistory.push({ label: `B${battle._id.toString().slice(-4)}`, score: loser.rating, win: false });
-await loser.save();
+      // Derive loserId from player1Id / player2Id (the correct schema fields)
+      // NOTE: challengerId / opponentId do NOT exist on the Battle schema
+      const loserId = battle.player1Id.toString() === result.winnerId.toString()
+        ? battle.player2Id
+        : battle.player1Id;
+
+      // Fetch both users together BEFORE using either — fixes the
+      // "ReferenceError: loser is not defined" runtime bug
+      const [winner, loser] = await Promise.all([
+        User.findById(result.winnerId),
+        User.findById(loserId),
+      ]);
+
+      const BATTLE_GAIN = 10;
+
+      if (winner) {
+        winner.rating = (winner.rating || 1200) + BATTLE_GAIN;
+        winner.wins = (winner.wins || 0) + 1;
+        winner.ratingHistory.push({
+          label: `B${battle._id.toString().slice(-4).toUpperCase()}`,
+          score: winner.rating,
+          win: true,
+        });
+        await winner.save();
+
         await Notification.create({
           user: winner._id,
           type: 'points_transaction',
           title: 'Battle Won!',
-          message: 'You won the battle and earned 10 points.'
+          message: `You won the battle and earned ${BATTLE_GAIN} points.`,
         });
       }
 
-      const loserId = battle.challengerId.toString() === result.winnerId.toString() ? battle.opponentId : battle.challengerId;
-      const loser = await User.findById(loserId);
       if (loser) {
+        loser.rating = Math.max(0, (loser.rating ?? 1200) - BATTLE_GAIN);
         loser.losses = (loser.losses || 0) + 1;
+        loser.ratingHistory.push({
+          label: `B${battle._id.toString().slice(-4).toUpperCase()}`,
+          score: loser.rating,
+          win: false,
+        });
         await loser.save();
       }
     }
