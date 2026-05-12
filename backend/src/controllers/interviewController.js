@@ -490,6 +490,33 @@ async function getCodingPracticeAnalytics(req, res, next) {
     next(err);
   }
 }
+// POST /api/interview/:sessionId/violation
+async function reportViolation(req, res, next) {
+  try {
+    const { sessionId } = req.params;
+    const { type } = req.body; // 'tab_switch' | 'fullscreen_exit' etc.
+    const userId = req.user._id;
+
+    const session = await InterviewSession.findOneAndUpdate(
+      { _id: sessionId, user: userId, status: { $in: ['pending', 'coding', 'ai_phase'] } },
+      {
+        $inc: { violationCount: 1 },
+        $push: { violationLog: { type, timestamp: new Date() } },
+      },
+      { new: true }
+    );
+
+    if (!session) return res.status(404).json({ success: false });
+
+    // Auto-terminate at 3 violations (backend enforced)
+    if (session.violationCount >= 3) {
+      await InterviewService.terminateSession(sessionId, userId, 'violations');
+      return res.status(200).json({ success: true, terminated: true });
+    }
+
+    return res.status(200).json({ success: true, terminated: false, count: session.violationCount });
+  } catch (err) { next(err); }
+}
 
 function getWeekNumber(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -510,4 +537,6 @@ module.exports = {
   terminateSession,
   getDashboardStats,
   getCodingPracticeAnalytics,
+  reportViolation,
+  getWeekNumber,
 };

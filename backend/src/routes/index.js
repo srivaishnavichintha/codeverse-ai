@@ -105,6 +105,7 @@ router.post('/interview/:sessionId/qualify',     protect, interviewController.ch
 router.post('/interview/:sessionId/answer',      protect, interviewController.submitAnswer);
 router.post('/interview/:sessionId/terminate',   protect, interviewController.terminateSession);
 router.get( '/interview/:sessionId/job/:jobId',  protect, interviewController.getJobStatus);
+router.post('/interview/:sessionId/violation',   protect, interviewController.reportViolation);
 
 // ══════════════════════════════════════════════════════════
 // INTERVIEW QUESTIONS  (question bank)

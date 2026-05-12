@@ -45,6 +45,9 @@ export function InterviewProvider({ children }) {
       finishInterview()
     }
   }
+  // When a violation occurs, report it:
+const response = await api.post(`/interview/${sessionId}/violation`, { type: violationType });
+if (response.data.terminated) { /* handle termination */ }
 
   const startInterview = () => setPhase('permissions')
 

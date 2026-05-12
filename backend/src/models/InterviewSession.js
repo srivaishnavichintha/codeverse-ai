@@ -51,6 +51,14 @@ const interviewSessionSchema = new mongoose.Schema(
       behavioralImprovements: [String],
       generatedAt: { type: Date, default: null },
     },
+    violationCount:  { type: Number, default: 0 },
+violationLog: [
+  {
+    type:      { type: String, enum: ['tab_switch', 'fullscreen_exit', 'devtools', 'copy_paste'] },
+    timestamp: { type: Date },
+  }
+],
+terminationReason: { type: String, enum: ['violations', 'timeout', 'user_exit', null], default: null },
     startedAt: { type: Date, default: null },
     codingDeadline: { type: Date, default: null },
     completedAt: { type: Date, default: null },
