@@ -251,6 +251,55 @@ const submitCode = async (req, res, next) => {
       },
     });
 
+    // ── Streak update (only on Accepted) ────────────────────────────────────
+    // Re-derive currentStreak from the user's activity heatmap so we never
+    // diverge from the source-of-truth that the rest of the app reads.
+    if (accepted) {
+      const today     = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      // Fetch the user's activity array (already maintained by the activity $inc
+      // logic elsewhere; we only need the distinct solved dates).
+      const userDoc = await User.findById(userId).select('activity streak').lean();
+      const solvedDates = new Set(
+        (userDoc?.activity || [])
+          .filter(a => a.count > 0)
+          .map(a => a.date)
+      );
+
+      // Include today in case this is the very first submission of the day
+      // (the activity $inc update may not yet include it at this point, so
+      // we add today explicitly so the streak is never off-by-one).
+      solvedDates.add(today);
+
+      const sortedDays = Array.from(solvedDates).sort();
+      let streak    = 1;
+      let maxStreak = 1;
+
+      for (let i = 1; i < sortedDays.length; i++) {
+        const diffDays = Math.round(
+          (new Date(sortedDays[i]) - new Date(sortedDays[i - 1])) / 86400000
+        );
+        if (diffDays === 1) {
+          streak++;
+          maxStreak = Math.max(maxStreak, streak);
+        } else {
+          streak = 1;
+        }
+      }
+
+      const lastDay      = sortedDays[sortedDays.length - 1];
+      const currentStreak = (lastDay === today || lastDay === yesterday) ? streak : 0;
+
+      // Only write if the streak has actually changed to avoid unnecessary writes
+      if (currentStreak !== (userDoc?.streak ?? 0)) {
+        await User.findByIdAndUpdate(userId, {
+          $set: { streak: currentStreak },
+        });
+      }
+    }
+    // ── End streak update ────────────────────────────────────────────────────
+
     return res.json({
       success: true,
       data: {
